@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="estilo.css">
+  <title>PAINEL ADMIN</title>
+</head>
+
+<body>
+
+  <fieldset id="lista">
+    <legend>USUÁRIOS CADASTRADOS</legend>
+    <ul id="listaUsuarios">
+      <li>Carregando usuários...</li>
+    </ul>
+    <center>
+      <button onclick="window.location.href='index.html'" style="margin-top: 15px;">Voltar para o Início</button>
+    </center>
+  </fieldset>
+
+  <!-- Formulário de edição ajustado para alterar apenas o Nome -->
+  <form id="formEditar" style="display: none;">
+    <fieldset style="border-color: #f0ad4e;">
+      <legend>EDITAR NOME DO USUÁRIO</legend>
+      <input type="hidden" id="editUserId">
+      
+      <p>
+        <label>Novo Nome:</label>
+        <input type="text" id="editNome" required>
+      </p>
+      
+      <center>
+        <button type="submit" style="background-color: #5cb85c; color: white; border: none; padding: 8px 16px; cursor: pointer;">
+          Salvar Alterações
+        </button>
+        <button type="button" id="btnCancelar" style="background-color: #ccc; border: none; padding: 8px 16px; cursor: pointer; margin-left: 5px;">
+          Cancelar
+        </button>
+      </center>
+    </fieldset>
+  </form>
+
+  <script type="module">
+    // IMPORTAÇÕES FIREBASE FIRESTORE
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      onSnapshot,
+      doc,
+      updateDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // CONFIG FIREBASE
+    const firebaseConfig = {
+      apiKey: "AIzaSyAop-jiU9hOIJUbkVRRaKxwEfg77ec7-Ds",
+      authDomain: "danielsite-edd5e.firebaseapp.com",
+      projectId: "danielsite-edd5e",
+      storageBucket: "danielsite-edd5e.firebasestorage.app",
+      messagingSenderId: "161459872849",
+      appId: "1:161459872849:web:c9d15b88916089ac6a0470"
+    };
+
+    // INICIALIZAÇÃO
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // ELEMENTOS DO DOM
+    const ulUsuarios = document.getElementById("listaUsuarios");
+    const formEditar = document.getElementById("formEditar");
+    const editUserId = document.getElementById("editUserId");
+    const editNome = document.getElementById("editNome");
+    const btnCancelar = document.getElementById("btnCancelar");
+
+    // LISTAGEM EM TEMPO REAL
+    onSnapshot(collection(db, "usuarios"), (snapshot) => {
+      ulUsuarios.innerHTML = "";
+
+      if (snapshot.empty) {
+        ulUsuarios.innerHTML = "<li>Nenhum usuário cadastrado.</li>";
+        return;
+      }
+
+      snapshot.forEach((documento) => {
+        const dados = documento.data();
+        const id = documento.id;
+        
+        const li = document.createElement("li");
+        li.textContent = `Nome: ${dados.nome} | Email: ${dados.email} `;
+        li.style.marginBottom = "10px";
+
+        // Botão de editar mantido da mesma forma
+        const btnEdit = document.createElement("button");
+        btnEdit.textContent = "Editar";
+        btnEdit.style.marginLeft = "10px";
+        btnEdit.style.cursor = "pointer";
+        
+        // Abre o formulário preenchendo apenas o id e o nome atual
+        btnEdit.onclick = () => {
+          editUserId.value = id;
+          editNome.value = dados.nome;
+          formEditar.style.display = "block";
+          formEditar.scrollIntoView({ behavior: 'smooth' });
+        };
+
+        li.appendChild(btnEdit);
+        ulUsuarios.appendChild(li);
+      });
+    });
+
+    // CANCELAR EDIÇÃO
+    btnCancelar.onclick = () => {
+      formEditar.style.display = "none";
+    };
+
+    // SALVAR EDIÇÃO (Atualiza somente o campo "nome")
+    formEditar.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const id = editUserId.value;
+      const novoNome = editNome.value;
+
+      try {
+        const userRef = doc(db, "usuarios", id);
+        
+        // Atualiza apenas a chave 'nome' no documento do Firestore
+        await updateDoc(userRef, {
+          nome: novoNome
+        });
+
+        alert("Nome atualizado com sucesso!");
+        formEditar.style.display = "none";
+
+      } catch (error) {
+        alert("Erro ao atualizar o nome: " + error.message);
+      }
+    });
+  </script>
+
+</body>
+
+</html>
