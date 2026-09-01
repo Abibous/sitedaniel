@@ -12,17 +12,14 @@
   <form id="formLogin">
     <fieldset id="fie">
       <legend>LOGIN</legend>
-
       <p>
         <label>Login (Email): </label>
         <input type="email" id="loginEmail" required>
       </p>
-
       <p>
         <label>SENHA :</label>
         <input type="password" id="loginSenha" required>
       </p>
-
       <center>
         <button type="submit">FAZER LOGIN</button>
       </center>
@@ -32,22 +29,18 @@
   <form id="formCadastro">
     <fieldset id="cad">
       <legend>CASO NÃO TENHA LOGIN, CADASTRE-SE</legend>
-
       <p>
         <label>Nome</label>
         <input type="text" id="cadastroNome" required>
       </p>
-
       <p>
         <label>Email</label>
         <input type="email" id="cadastroEmail" required>
       </p>
-
       <p>
         <label>Senha</label>
         <input type="password" id="cadastroSenha" required>
       </p>
-
       <center>
         <button type="submit">CADASTRE-SE</button>
         <input type="reset" value="Limpar">
@@ -58,17 +51,14 @@
   <form id="formExcluir">
     <fieldset id="exc">
       <legend>EXCLUIR CONTA</legend>
-
       <p>
         <label>Email: </label>
         <input type="email" id="excluirEmail" required>
       </p>
-
       <p>
         <label>Senha: </label>
         <input type="password" id="excluirSenha" required>
       </p>
-
       <center>
         <button type="submit" style="background-color: #d9534f; color: white; border: none; padding: 8px 16px; cursor: pointer;">
           EXCLUIR MINHA CONTA
@@ -77,31 +67,29 @@
     </fieldset>
   </form>
 
-  <fieldset id="lista">
-    <legend>USUÁRIOS CADASTRADOS</legend>
-    <ul id="listaUsuarios">
-      <li>Carregando usuários...</li>
-    </ul>
+  <fieldset>
+    <legend>ÁREA DO ADMINISTRADOR</legend>
+    <center>
+      <button type="button" onclick="window.location.href='admin.html'" style="background-color: #333; color: white; border: none; padding: 10px 20px; cursor: pointer;">
+        Abrir lista de cadastros como admin
+      </button>
+    </center>
   </fieldset>
 
   <script type="module">
     // IMPORTAÇÕES FIREBASE
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-
     import {
       getAuth,
       createUserWithEmailAndPassword,
       signInWithEmailAndPassword,
       deleteUser
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
     import {
       getFirestore,
       doc,
       setDoc,
-      deleteDoc,
-      collection,
-      onSnapshot
+      deleteDoc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     // CONFIG FIREBASE
@@ -122,7 +110,6 @@
     // CADASTRO
     document.getElementById("formCadastro").addEventListener("submit", async (e) => {
       e.preventDefault();
-
       const nome = document.getElementById("cadastroNome").value;
       const email = document.getElementById("cadastroEmail").value;
       const senha = document.getElementById("cadastroSenha").value;
@@ -147,7 +134,6 @@
     // LOGIN
     document.getElementById("formLogin").addEventListener("submit", async (e) => {
       e.preventDefault();
-
       const email = document.getElementById("loginEmail").value;
       const senha = document.getElementById("loginSenha").value;
 
@@ -162,7 +148,6 @@
     // EXCLUIR
     document.getElementById("formExcluir").addEventListener("submit", async (e) => {
       e.preventDefault();
-
       const email = document.getElementById("excluirEmail").value;
       const senha = document.getElementById("excluirSenha").value;
 
@@ -170,43 +155,17 @@
       if (!confirmacao) return;
 
       try {
-        // 1. Autentica o usuário com o e-mail e senha digitados
         const userCredential = await signInWithEmailAndPassword(auth, email, senha);
         const user = userCredential.user;
 
-        // 2. Apaga o documento do usuário na coleção 'usuarios' do Firestore
         await deleteDoc(doc(db, "usuarios", user.uid));
-
-        // 3. Exclui a conta do Firebase Authentication
         await deleteUser(user);
 
         alert("Usuário excluído com sucesso!");
         document.getElementById("formExcluir").reset();
-
       } catch (error) {
         alert("Erro ao excluir usuário: " + error.message);
       }
-    });
-
-    // LISTAGEM DE USUÁRIOS EM TEMPO REAL
-    const ulUsuarios = document.getElementById("listaUsuarios");
-
-    onSnapshot(collection(db, "usuarios"), (snapshot) => {
-      // Limpa a lista antes de desenhar os itens atualizados
-      ulUsuarios.innerHTML = "";
-
-      if (snapshot.empty) {
-        ulUsuarios.innerHTML = "<li>Nenhum usuário cadastrado.</li>";
-        return;
-      }
-
-      // Percorre todos os documentos da coleção "usuarios"
-      snapshot.forEach((doc) => {
-        const dados = doc.data();
-        const li = document.createElement("li");
-        li.textContent = `Nome: ${dados.nome} | Email: ${dados.email}`;
-        ulUsuarios.appendChild(li);
-      });
     });
   </script>
 
