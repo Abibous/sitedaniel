@@ -1,33 +1,146 @@
-﻿<!DOCTYPE html>
+```html
+<!DOCTYPE html>
 <html lang="pt-br">
-  <head>
-    <meta charset="utf-8">
-   <link rel="stylesheet" href="estilo.css">
-   <title>EXEMPLO DE HTML 5</title>
- </head>
+
+<head>
+
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0">
+
+  <link
+    rel="stylesheet"
+    href="estilo.css">
+
+  <title>
+    EXEMPLO DE HTML 5
+  </title>
+
+</head>
+
 <body>
+
 <header>
-<h2>CONTEUDO DO CABEÇALHO (NOME DO SITE, ASSUNTO ABORDADO, OUTROS)</h2>
+
+  <h2>
+    CONTEUDO DO CABEÇALHO
+    (NOME DO SITE, ASSUNTO ABORDADO, OUTROS)
+  </h2>
+
 </header>
+
+
 <nav>
-LINK-1
-LINK-2
-LINK-3
+
+  LINK-1
+  LINK-2
+  LINK-3
+
 </nav>
+
+
 <section>
-<h2>CONTEÚDO DA PÁGINA</h2>
-<p>
-INSERIR AQUI O CONTEÚDO DO SITE
-</p>
+
+  <h2>
+    CONTEÚDO DA PÁGINA
+  </h2>
+
+  <p>
+    INSERIR AQUI O CONTEÚDO DO SITE
+  </p>
+
 </section>
+
+
 <aside>
-<h4>OUTROS LINKS, PROPAGANDAS<br>OU  PATROCINADORES</h4>
-<p>
-LINK 4
-</p>
+
+  <h4>
+    OUTROS LINKS, PROPAGANDAS
+    <br>
+    OU PATROCINADORES
+  </h4>
+
+  <p>
+    LINK 4
+  </p>
+
 </aside>
+
+
 <footer>
-CONTEÚDO DO RODAPÉ - (DESENVOLVERDOR, WEB MASTER, CONTATOS)
+
+  CONTEÚDO DO RODAPÉ -
+  (DESENVOLVEDOR, WEB MASTER, CONTATOS)
+
 </footer>
+
+
+<script type="module">
+
+  import {
+    initializeApp
+  } from
+    "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+
+  import {
+    getAuth,
+    onAuthStateChanged
+  } from
+    "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+
+  const firebaseConfig = {
+
+    apiKey:
+      "AIzaSyAop-jiU9hOIJUbkVRRaKxwEfg77ec7-Ds",
+
+    authDomain:
+      "danielsite-edd5e.firebaseapp.com",
+
+    projectId:
+      "danielsite-edd5e",
+
+    storageBucket:
+      "danielsite-edd5e.firebasestorage.app",
+
+    messagingSenderId:
+      "161459872849",
+
+    appId:
+      "1:161459872849:web:c9d15b88916089ac6a0470"
+
+  };
+
+
+  const app =
+    initializeApp(firebaseConfig);
+
+
+  const auth =
+    getAuth(app);
+
+
+  // Impede o acesso direto ao site sem login.
+
+  onAuthStateChanged(
+    auth,
+    (user) => {
+
+      if (!user) {
+
+        window.location.href =
+          "index.html";
+
+      }
+
+    }
+  );
+
+</script>
+
 </body>
 </html>
+
