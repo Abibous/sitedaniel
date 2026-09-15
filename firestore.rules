@@ -1,0 +1,81 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+
+  match /databases/{database}/documents {
+
+
+    function estaAutenticado() {
+
+      return request.auth != null;
+
+    }
+
+
+    function ehAdmin() {
+
+      return estaAutenticado()
+        && request.auth.token.email == 'admin@danielsite.com';
+
+    }
+
+
+    match /usuarios/{userId} {
+
+
+      // Usuário acessa o próprio cadastro.
+      // Administrador acessa todos os cadastros.
+
+      allow read:
+        if estaAutenticado()
+        && (
+          request.auth.uid == userId
+          || ehAdmin()
+        );
+
+
+      // Usuário pode criar somente o próprio documento.
+
+      allow create:
+        if estaAutenticado()
+        && request.auth.uid == userId
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.keys().hasOnly([
+          'nome',
+          'email',
+          'tipoEmail'
+        ]);
+
+
+      // Usuário pode alterar o próprio cadastro.
+      // Administrador também pode editar.
+
+      allow update:
+        if estaAutenticado()
+        && (
+          request.auth.uid == userId
+          || ehAdmin()
+        )
+        && request.resource.data.keys().hasOnly([
+          'nome',
+          'email',
+          'tipoEmail'
+        ]);
+
+
+      // O próprio usuário ou o administrador podem excluir.
+
+      allow delete:
+        if estaAutenticado()
+        && (
+          request.auth.uid == userId
+          || ehAdmin()
+        );
+
+    }
+
+  }
+
+}
+
