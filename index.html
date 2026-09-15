@@ -1,24 +1,24 @@
+
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="estilo.css">
   <title>PÁGINA DE LOGIN</title>
 </head>
-
 <body>
 
   <form id="formLogin">
     <fieldset id="fie">
       <legend>LOGIN</legend>
       <p>
-        <label>Login (Email): </label>
-        <input type="email" id="loginEmail" required>
+        <label for="loginEmail">Login (Email): </label>
+        <input type="email" id="loginEmail" maxlength="150" required autocomplete="email">
       </p>
       <p>
-        <label>SENHA :</label>
-        <input type="password" id="loginSenha" required>
+        <label for="loginSenha">SENHA :</label>
+        <input type="password" id="loginSenha" maxlength="128" required autocomplete="current-password">
       </p>
       <center>
         <button type="submit">FAZER LOGIN</button>
@@ -29,18 +29,27 @@
   <form id="formCadastro">
     <fieldset id="cad">
       <legend>CASO NÃO TENHA LOGIN, CADASTRE-SE</legend>
+
       <p>
-        <label>Nome</label>
-        <input type="text" id="cadastroNome" required>
+        <label for="cadastroNome">Nome</label>
+        <input type="text" id="cadastroNome" maxlength="80" required autocomplete="name">
       </p>
+
       <p>
-        <label>Email</label>
-        <input type="email" id="cadastroEmail" required>
+        <label for="cadastroEmail">Email</label>
+        <input type="email" id="cadastroEmail" maxlength="150" required autocomplete="email">
       </p>
+
       <p>
-        <label>Senha</label>
-        <input type="password" id="cadastroSenha" required>
+        <label for="cadastroSenha">Senha</label>
+        <input type="password" id="cadastroSenha" maxlength="128" required autocomplete="new-password">
       </p>
+
+      <small>
+        A senha deve ter pelo menos 8 caracteres, com maiúscula,
+        minúscula, número e caractere especial.
+      </small>
+
       <center>
         <button type="submit">CADASTRE-SE</button>
         <input type="reset" value="Limpar">
@@ -51,16 +60,25 @@
   <form id="formExcluir">
     <fieldset id="exc">
       <legend>EXCLUIR CONTA</legend>
+
       <p>
-        <label>Email: </label>
-        <input type="email" id="excluirEmail" required>
+        <label for="excluirEmail">Email: </label>
+        <input type="email" id="excluirEmail" maxlength="150" required autocomplete="email">
       </p>
+
       <p>
-        <label>Senha: </label>
-        <input type="password" id="excluirSenha" required>
+        <label for="excluirSenhaUsuario">Senha da conta: </label>
+        <input type="password" id="excluirSenhaUsuario" maxlength="128" required autocomplete="current-password">
       </p>
+
+      <p>
+        <label for="excluirSenhaAdmin">Senha do administrador: </label>
+        <input type="password" id="excluirSenhaAdmin" maxlength="128" required autocomplete="off">
+      </p>
+
       <center>
-        <button type="submit" style="background-color: #d9534f; color: white; border: none; padding: 8px 16px; cursor: pointer;">
+        <button type="submit"
+          style="background-color:#d9534f;color:white;border:none;padding:8px 16px;cursor:pointer;">
           EXCLUIR MINHA CONTA
         </button>
       </center>
@@ -69,30 +87,39 @@
 
   <fieldset>
     <legend>ÁREA DO ADMINISTRADOR</legend>
+
     <center>
-      <button type="button" onclick="window.location.href='admin.html'" style="background-color: #333; color: white; border: none; padding: 10px 20px; cursor: pointer;">
+      <button type="button"
+        onclick="window.location.href='admin.html'"
+        style="background-color:#333;color:white;border:none;padding:10px 20px;cursor:pointer;">
         Abrir lista de cadastros como admin
       </button>
     </center>
   </fieldset>
 
   <script type="module">
-    // IMPORTAÇÕES FIREBASE
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+    import { initializeApp } from
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
     import {
       getAuth,
       createUserWithEmailAndPassword,
       signInWithEmailAndPassword,
-      deleteUser
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+      deleteUser,
+      signOut
+    } from
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
     import {
       getFirestore,
       doc,
       setDoc,
       deleteDoc
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    } from
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // CONFIG FIREBASE
+
     const firebaseConfig = {
       apiKey: "AIzaSyAop-jiU9hOIJUbkVRRaKxwEfg77ec7-Ds",
       authDomain: "danielsite-edd5e.firebaseapp.com",
@@ -102,73 +129,250 @@
       appId: "1:161459872849:web:c9d15b88916089ac6a0470"
     };
 
-    // INICIALIZAÇÃO
+
+    const ADMIN_EMAIL = "admin@danielsite.com";
+
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
+
+    // Segunda instância usada apenas para verificar a senha do administrador.
+    const adminApp = initializeApp(firebaseConfig, "adminVerification");
+    const adminAuth = getAuth(adminApp);
+
+
+    function normalizarEmail(email) {
+      return email.trim().toLowerCase();
+    }
+
+
+    function validarNome(nome) {
+      return /^[A-Za-zÀ-ÿ0-9][A-Za-zÀ-ÿ0-9 .'-]{1,79}$/.test(nome.trim());
+    }
+
+
+    function validarSenha(senha) {
+      return senha.length >= 8 &&
+        /[A-Z]/.test(senha) &&
+        /[a-z]/.test(senha) &&
+        /\d/.test(senha) &&
+        /[^A-Za-z0-9]/.test(senha);
+    }
+
+
+    function tipoEmail(email) {
+      const dominio = email.split("@")[1] || "";
+
+      return dominio.includes("gmail")
+        ? "gmail"
+        : "outro";
+    }
+
+
+    // ==============================
     // CADASTRO
+    // ==============================
+
     document.getElementById("formCadastro").addEventListener("submit", async (e) => {
+
       e.preventDefault();
-      const nome = document.getElementById("cadastroNome").value;
-      const email = document.getElementById("cadastroEmail").value;
-      const senha = document.getElementById("cadastroSenha").value;
+
+      const nome =
+        document.getElementById("cadastroNome").value.trim();
+
+      const email =
+        normalizarEmail(
+          document.getElementById("cadastroEmail").value
+        );
+
+      const senha =
+        document.getElementById("cadastroSenha").value;
+
+
+      if (!validarNome(nome)) {
+        alert("Nome inválido. Use entre 2 e 80 caracteres.");
+        return;
+      }
+
+
+      if (!validarSenha(senha)) {
+        alert(
+          "Senha inválida. Use pelo menos 8 caracteres, " +
+          "uma maiúscula, uma minúscula, um número e um caractere especial."
+        );
+
+        return;
+      }
+
 
       try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+
+        const userCredential =
+          await createUserWithEmailAndPassword(
+            auth,
+            email,
+            senha
+          );
+
         const user = userCredential.user;
 
-        // SALVA DADOS NO FIRESTORE
-        await setDoc(doc(db, "usuarios", user.uid), {
-          nome: nome,
-          email: email
-        });
 
-        alert("Usuário cadastrado!");
+        // A senha NÃO é salva no Firestore.
+        // O Firebase Authentication cuida da proteção da senha.
+
+        await setDoc(
+          doc(db, "usuarios", user.uid),
+          {
+            nome: nome,
+            email: email,
+            tipoEmail: tipoEmail(email)
+          }
+        );
+
+
+        await signOut(auth);
+
+        alert("Usuário cadastrado com sucesso!");
+
         document.getElementById("formCadastro").reset();
+
       } catch (error) {
-        alert(error.message);
+
+        alert("Erro no cadastro: " + error.message);
+
       }
+
     });
 
+
+    // ==============================
     // LOGIN
+    // ==============================
+
     document.getElementById("formLogin").addEventListener("submit", async (e) => {
+
       e.preventDefault();
-      const email = document.getElementById("loginEmail").value;
-      const senha = document.getElementById("loginSenha").value;
+
+      const email =
+        normalizarEmail(
+          document.getElementById("loginEmail").value
+        );
+
+      const senha =
+        document.getElementById("loginSenha").value;
+
 
       try {
-        await signInWithEmailAndPassword(auth, email, senha);
+
+        await signInWithEmailAndPassword(
+          auth,
+          email,
+          senha
+        );
+
         window.location.href = "site.html";
+
       } catch (error) {
-        alert(error.message);
+
+        alert(
+          "Login inválido. Verifique o e-mail e a senha."
+        );
+
       }
+
     });
 
-    // EXCLUIR
-    document.getElementById("formExcluir").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const email = document.getElementById("excluirEmail").value;
-      const senha = document.getElementById("excluirSenha").value;
 
-      const confirmacao = confirm("Tem certeza que deseja excluir esta conta permanentemente?");
-      if (!confirmacao) return;
+    // ==============================
+    // EXCLUSÃO DE CONTA
+    // ==============================
+
+    document.getElementById("formExcluir").addEventListener("submit", async (e) => {
+
+      e.preventDefault();
+
+
+      const email =
+        normalizarEmail(
+          document.getElementById("excluirEmail").value
+        );
+
+      const senhaUsuario =
+        document.getElementById("excluirSenhaUsuario").value;
+
+      const senhaAdmin =
+        document.getElementById("excluirSenhaAdmin").value;
+
+
+      // Impede a exclusão da conta administrativa por esta tela.
+
+      if (email === ADMIN_EMAIL) {
+
+        alert(
+          "A conta administrativa não pode ser excluída por esta tela."
+        );
+
+        return;
+      }
+
 
       try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, senha);
+
+        // 1 - Verifica a senha do administrador.
+
+        await signInWithEmailAndPassword(
+          adminAuth,
+          ADMIN_EMAIL,
+          senhaAdmin
+        );
+
+        await signOut(adminAuth);
+
+
+        // 2 - Autentica o usuário que será excluído.
+
+        const userCredential =
+          await signInWithEmailAndPassword(
+            auth,
+            email,
+            senhaUsuario
+          );
+
         const user = userCredential.user;
 
-        await deleteDoc(doc(db, "usuarios", user.uid));
+
+        // 3 - Remove os dados do Firestore.
+
+        await deleteDoc(
+          doc(db, "usuarios", user.uid)
+        );
+
+
+        // 4 - Remove a conta do Firebase Authentication.
+
         await deleteUser(user);
 
+
         alert("Usuário excluído com sucesso!");
+
         document.getElementById("formExcluir").reset();
+
+
       } catch (error) {
-        alert("Erro ao excluir usuário: " + error.message);
+
+        alert(
+          "Não foi possível excluir a conta. " +
+          "Verifique as credenciais informadas."
+        );
+
       }
+
     });
+
   </script>
 
 </body>
-
 </html>
+
