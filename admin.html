@@ -1,58 +1,156 @@
+
 <!DOCTYPE html>
 <html lang="pt-br">
 
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <link rel="stylesheet" href="estilo.css">
+
   <title>PAINEL ADMIN</title>
 </head>
 
 <body>
 
-  <fieldset id="lista">
-    <legend>USUÁRIOS CADASTRADOS</legend>
-    <ul id="listaUsuarios">
-      <li>Carregando usuários...</li>
-    </ul>
-    <center>
-      <button onclick="window.location.href='index.html'" style="margin-top: 15px;">Voltar para o Início</button>
-    </center>
+  <fieldset id="acessoAdmin">
+
+    <legend>ÁREA DO ADMINISTRADOR</legend>
+
+    <p id="statusAdmin">
+      Verificando acesso...
+    </p>
+
   </fieldset>
 
-  <!-- Formulário de edição ajustado para alterar apenas o Nome -->
-  <form id="formEditar" style="display: none;">
-    <fieldset style="border-color: #f0ad4e;">
-      <legend>EDITAR NOME DO USUÁRIO</legend>
-      <input type="hidden" id="editUserId">
-      
+
+  <fieldset id="lista" style="display:none;">
+
+    <legend>USUÁRIOS CADASTRADOS</legend>
+
+
+    <p>
+      Consultas usando <code>where()</code>:
+    </p>
+
+
+    <center>
+
+      <button type="button" id="btnTodos">
+        Todos
+      </button>
+
+      <button type="button" id="btnGmail">
+        E-mails com @gmail
+      </button>
+
+      <button type="button" id="btnOutros">
+        Outros e-mails
+      </button>
+
+    </center>
+
+
+    <p id="filtroAtual">
+      Filtro atual: todos
+    </p>
+
+
+    <ul id="listaUsuarios"></ul>
+
+
+    <center>
+
+      <button
+        id="btnSair"
+        type="button"
+        style="margin-top:15px;">
+        Sair do administrador
+      </button>
+
+    </center>
+
+  </fieldset>
+
+
+  <form id="formEditar" style="display:none;">
+
+    <fieldset style="border-color:#f0ad4e;">
+
+      <legend>
+        EDITAR NOME DO USUÁRIO
+      </legend>
+
+
+      <input
+        type="hidden"
+        id="editUserId">
+
+
       <p>
-        <label>Novo Nome:</label>
-        <input type="text" id="editNome" required>
+
+        <label for="editNome">
+          Novo Nome:
+        </label>
+
+        <input
+          type="text"
+          id="editNome"
+          maxlength="80"
+          required>
+
       </p>
-      
+
+
       <center>
-        <button type="submit" style="background-color: #5cb85c; color: white; border: none; padding: 8px 16px; cursor: pointer;">
+
+        <button
+          type="submit"
+          style="background-color:#5cb85c;color:white;border:none;padding:8px 16px;cursor:pointer;">
           Salvar Alterações
         </button>
-        <button type="button" id="btnCancelar" style="background-color: #ccc; border: none; padding: 8px 16px; cursor: pointer; margin-left: 5px;">
+
+
+        <button
+          type="button"
+          id="btnCancelar"
+          style="background-color:#ccc;border:none;padding:8px 16px;cursor:pointer;margin-left:5px;">
           Cancelar
         </button>
+
       </center>
+
     </fieldset>
+
   </form>
 
+
   <script type="module">
-    // IMPORTAÇÕES FIREBASE FIRESTORE
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+    import { initializeApp } from
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signOut
+    } from
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+
     import {
       getFirestore,
       collection,
+      query,
+      where,
       onSnapshot,
       doc,
       updateDoc
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    } from
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // CONFIG FIREBASE
+
     const firebaseConfig = {
       apiKey: "AIzaSyAop-jiU9hOIJUbkVRRaKxwEfg77ec7-Ds",
       authDomain: "danielsite-edd5e.firebaseapp.com",
@@ -62,82 +160,469 @@
       appId: "1:161459872849:web:c9d15b88916089ac6a0470"
     };
 
-    // INICIALIZAÇÃO
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
 
-    // ELEMENTOS DO DOM
-    const ulUsuarios = document.getElementById("listaUsuarios");
-    const formEditar = document.getElementById("formEditar");
-    const editUserId = document.getElementById("editUserId");
-    const editNome = document.getElementById("editNome");
-    const btnCancelar = document.getElementById("btnCancelar");
+    const ADMIN_EMAIL =
+      "admin@danielsite.com";
 
-    // LISTAGEM EM TEMPO REAL
-    onSnapshot(collection(db, "usuarios"), (snapshot) => {
-      ulUsuarios.innerHTML = "";
 
-      if (snapshot.empty) {
-        ulUsuarios.innerHTML = "<li>Nenhum usuário cadastrado.</li>";
+    const app =
+      initializeApp(firebaseConfig);
+
+    const auth =
+      getAuth(app);
+
+    const db =
+      getFirestore(app);
+
+
+    const acessoAdmin =
+      document.getElementById("acessoAdmin");
+
+    const lista =
+      document.getElementById("lista");
+
+    const statusAdmin =
+      document.getElementById("statusAdmin");
+
+    const ulUsuarios =
+      document.getElementById("listaUsuarios");
+
+    const filtroAtual =
+      document.getElementById("filtroAtual");
+
+    const formEditar =
+      document.getElementById("formEditar");
+
+    const editUserId =
+      document.getElementById("editUserId");
+
+    const editNome =
+      document.getElementById("editNome");
+
+
+    function validarNome(nome) {
+
+      return /^[A-Za-zÀ-ÿ0-9][A-Za-zÀ-ÿ0-9 .'-]{1,79}$/
+        .test(nome.trim());
+
+    }
+
+
+    // ==============================
+    // VERIFICAÇÃO DO ADMINISTRADOR
+    // ==============================
+
+    onAuthStateChanged(auth, (user) => {
+
+      if (!user) {
+
+        statusAdmin.textContent =
+          "Acesso negado. Faça login com a conta administrativa.";
+
+        setTimeout(() => {
+
+          window.location.href =
+            "index.html";
+
+        }, 1200);
+
         return;
       }
 
-      snapshot.forEach((documento) => {
-        const dados = documento.data();
-        const id = documento.id;
-        
-        const li = document.createElement("li");
-        li.textContent = `Nome: ${dados.nome} | Email: ${dados.email} `;
-        li.style.marginBottom = "10px";
 
-        // Botão de editar mantido da mesma forma
-        const btnEdit = document.createElement("button");
-        btnEdit.textContent = "Editar";
-        btnEdit.style.marginLeft = "10px";
-        btnEdit.style.cursor = "pointer";
-        
-        // Abre o formulário preenchendo apenas o id e o nome atual
-        btnEdit.onclick = () => {
-          editUserId.value = id;
-          editNome.value = dados.nome;
-          formEditar.style.display = "block";
-          formEditar.scrollIntoView({ behavior: 'smooth' });
-        };
+      if (
+        user.email.toLowerCase() !==
+        ADMIN_EMAIL
+      ) {
 
-        li.appendChild(btnEdit);
-        ulUsuarios.appendChild(li);
-      });
+        statusAdmin.textContent =
+          "Acesso negado. Esta conta não é administradora.";
+
+        signOut(auth);
+
+
+        setTimeout(() => {
+
+          window.location.href =
+            "index.html";
+
+        }, 1200);
+
+        return;
+      }
+
+
+      acessoAdmin.style.display =
+        "none";
+
+      lista.style.display =
+        "block";
+
+
+      carregarUsuarios("todos");
+
     });
 
-    // CANCELAR EDIÇÃO
-    btnCancelar.onclick = () => {
-      formEditar.style.display = "none";
+
+    // ==============================
+    // CONSULTAS COM WHERE
+    // ==============================
+
+    function montarConsulta(tipo) {
+
+      const usuarios =
+        collection(db, "usuarios");
+
+
+      // CONSULTA PARAMETRIZADA
+      // O filtro é passado como valor do where(),
+      // em vez de concatenar texto de consulta.
+
+      if (tipo === "gmail") {
+
+        return query(
+          usuarios,
+          where(
+            "tipoEmail",
+            "==",
+            "gmail"
+          )
+        );
+
+      }
+
+
+      if (tipo === "outros") {
+
+        return query(
+          usuarios,
+          where(
+            "tipoEmail",
+            "!=",
+            "gmail"
+          )
+        );
+
+      }
+
+
+      return query(usuarios);
+
+    }
+
+
+    let cancelarListener =
+      null;
+
+
+    function carregarUsuarios(tipo) {
+
+      if (cancelarListener) {
+
+        cancelarListener();
+
+      }
+
+
+      const nomesFiltro = {
+
+        todos:
+          "todos",
+
+        gmail:
+          "e-mails com @gmail",
+
+        outros:
+          "outros e-mails"
+
+      };
+
+
+      filtroAtual.textContent =
+        "Filtro atual: " +
+        nomesFiltro[tipo];
+
+
+      ulUsuarios.innerHTML =
+        "";
+
+
+      const consulta =
+        montarConsulta(tipo);
+
+
+      cancelarListener =
+        onSnapshot(
+          consulta,
+
+          (snapshot) => {
+
+            ulUsuarios.innerHTML =
+              "";
+
+
+            if (snapshot.empty) {
+
+              const vazio =
+                document.createElement("li");
+
+              vazio.textContent =
+                "Nenhum usuário encontrado para este filtro.";
+
+              ulUsuarios.appendChild(
+                vazio
+              );
+
+              return;
+            }
+
+
+            snapshot.forEach(
+              (documento) => {
+
+                const dados =
+                  documento.data();
+
+
+                const li =
+                  document.createElement("li");
+
+
+                li.style.marginBottom =
+                  "10px";
+
+
+                // textContent impede que dados
+                // cadastrados sejam interpretados como HTML.
+
+                const texto =
+                  document.createElement("span");
+
+
+                texto.textContent =
+                  `Nome: ${dados.nome || ""} | Email: ${dados.email || ""}`;
+
+
+                li.appendChild(
+                  texto
+                );
+
+
+                const btnEdit =
+                  document.createElement("button");
+
+
+                btnEdit.type =
+                  "button";
+
+
+                btnEdit.textContent =
+                  "Editar";
+
+
+                btnEdit.style.marginLeft =
+                  "10px";
+
+
+                btnEdit.onclick = () => {
+
+                  editUserId.value =
+                    documento.id;
+
+
+                  editNome.value =
+                    dados.nome || "";
+
+
+                  formEditar.style.display =
+                    "block";
+
+
+                  formEditar.scrollIntoView({
+                    behavior: "smooth"
+                  });
+
+                };
+
+
+                li.appendChild(
+                  btnEdit
+                );
+
+
+                ulUsuarios.appendChild(
+                  li
+                );
+
+              }
+            );
+
+          },
+
+
+          (error) => {
+
+            ulUsuarios.innerHTML =
+              "";
+
+
+            const li =
+              document.createElement("li");
+
+
+            li.textContent =
+              "Não foi possível consultar os usuários.";
+
+
+            ulUsuarios.appendChild(
+              li
+            );
+
+
+            console.error(error);
+
+          }
+        );
+
+    }
+
+
+    // ==============================
+    // BOTÕES DOS FILTROS
+    // ==============================
+
+    document.getElementById(
+      "btnTodos"
+    ).onclick = () => {
+
+      carregarUsuarios(
+        "todos"
+      );
+
     };
 
-    // SALVAR EDIÇÃO (Atualiza somente o campo "nome")
-    formEditar.addEventListener("submit", async (e) => {
-      e.preventDefault();
 
-      const id = editUserId.value;
-      const novoNome = editNome.value;
+    document.getElementById(
+      "btnGmail"
+    ).onclick = () => {
 
-      try {
-        const userRef = doc(db, "usuarios", id);
-        
-        // Atualiza apenas a chave 'nome' no documento do Firestore
-        await updateDoc(userRef, {
-          nome: novoNome
-        });
+      carregarUsuarios(
+        "gmail"
+      );
 
-        alert("Nome atualizado com sucesso!");
-        formEditar.style.display = "none";
+    };
 
-      } catch (error) {
-        alert("Erro ao atualizar o nome: " + error.message);
+
+    document.getElementById(
+      "btnOutros"
+    ).onclick = () => {
+
+      carregarUsuarios(
+        "outros"
+      );
+
+    };
+
+
+    // ==============================
+    // CANCELAR EDIÇÃO
+    // ==============================
+
+    document.getElementById(
+      "btnCancelar"
+    ).onclick = () => {
+
+      formEditar.reset();
+
+      formEditar.style.display =
+        "none";
+
+    };
+
+
+    // ==============================
+    // EDITAR NOME
+    // ==============================
+
+    formEditar.addEventListener(
+      "submit",
+      async (e) => {
+
+        e.preventDefault();
+
+
+        const id =
+          editUserId.value;
+
+
+        const novoNome =
+          editNome.value.trim();
+
+
+        if (!validarNome(novoNome)) {
+
+          alert(
+            "Nome inválido. Use entre 2 e 80 caracteres."
+          );
+
+          return;
+        }
+
+
+        try {
+
+          await updateDoc(
+            doc(
+              db,
+              "usuarios",
+              id
+            ),
+            {
+              nome: novoNome
+            }
+          );
+
+
+          alert(
+            "Nome atualizado com sucesso!"
+          );
+
+
+          formEditar.reset();
+
+          formEditar.style.display =
+            "none";
+
+
+        } catch (error) {
+
+          alert(
+            "Erro ao atualizar o nome."
+          );
+
+        }
+
       }
-    });
+    );
+
+
+    // ==============================
+    // SAIR
+    // ==============================
+
+    document.getElementById(
+      "btnSair"
+    ).onclick = async () => {
+
+      await signOut(auth);
+
+      window.location.href =
+        "index.html";
+
+    };
+
   </script>
 
 </body>
-
 </html>
+
